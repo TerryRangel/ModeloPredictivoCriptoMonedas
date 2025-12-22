@@ -1,53 +1,85 @@
 import pandas as pd
 import numpy as np
 
-# =========================
-# 1. Cargar dataset de regímenes
-# =========================
+# ======================================================
+# 1. Cargar dataset con régimen futuro ML
+# ======================================================
 df = pd.read_csv(
-    "bitcoin_regime_dataset.csv",
+    "bitcoin_regime_dataset_future_ml.csv",
     parse_dates=["Date"],
     index_col="Date"
 ).sort_index()
 
-# =========================
-# 2. Variación de volatilidad
-# =========================
+# ======================================================
+# 2. Retornos en escala decimal
+# ======================================================
+df["return"] = df["return_pct"] / 100.0
+
+# ======================================================
+# 3. Variación de volatilidad
+# ======================================================
 df["vol_change"] = df["volatility"].diff()
 
-# =========================
-# 3. Inicializar señal
-# =========================
-df["signal"] = 0  # Neutro por defecto
+# ======================================================
+# 4. Señal base (direccional)
+# ======================================================
+df["signal"] = 0
 
-# =========================
-# 4. Regla de COMPRA / MANTENER
-# =========================
 buy_condition = (
-    (df["regime"] == 0) &
-    (df["vol_change"] <= 0) &
-    (df["ret_5d"] >= 0)
+    (df["regime"] == 0) &                     # Régimen actual favorable
+    (df["regime_future_ml"] != 2) &           # No se anticipa crisis
+    (df["vol_change"] <= 0) &                 # Volatilidad contenida
+    (df["ret_5d"] >= 0)                       # Momentum positivo
+)
+
+sell_condition = (
+    (df["regime"] == 2) |                     # Régimen actual adverso
+    (df["regime_future_ml"] == 2)             # Régimen futuro adverso
 )
 
 df.loc[buy_condition, "signal"] = 1
-
-# =========================
-# 5. Regla de SALIDA
-# =========================
-sell_condition = (
-    (df["regime"] == 2) |
-    (df["vol_change"] > df["volatility"].rolling(5).std())
-)
-
 df.loc[sell_condition, "signal"] = -1
 
-# =========================
-# 6. Guardar señales
-# =========================
+# Mantener posición (clásico)
+df["signal"] = df["signal"].replace(0, np.nan).ffill().fillna(0)
+
+# ======================================================
+# 5. VOLATILITY TARGETING (CLAVE DEL CONTROL DE DD)
+# ======================================================
+
+# Volatilidad realizada (20 días)
+df["realized_vol"] = df["return"].rolling(20).std()
+
+# Piso de volatilidad para evitar apalancamiento extremo
+df["realized_vol"] = df["realized_vol"].clip(lower=0.006)
+
+# Target de riesgo diario (CONSERVADOR)
+TARGET_VOL = 0.018   # 1.8% diario → enfocado en drawdown
+
+# Posición dinámica
+df["position"] = TARGET_VOL / df["realized_vol"]
+
+# Límites estrictos de exposición
+df["position"] = df["position"].clip(lower=0.0, upper=1.3)
+
+# Aplicar señal direccional
+df.loc[df["signal"] <= 0, "position"] = 0.0
+
+# ======================================================
+# 6. Guardar dataset final
+# ======================================================
 df.to_csv("bitcoin_trading_signals.csv")
 
-print("Reglas de trading aplicadas correctamente")
-print("\nDistribución de señales:")
-print(df["signal"].value_counts())
-print("\nPrimeras filas:")
-print(df[["return_pct", "volatility", "regime", "signal"]].head())
+# ======================================================
+# 7. Diagnóstico mínimo
+# ======================================================
+print("Reglas de trading con control de drawdown aplicadas correctamente\n")
+
+print("Distribución de señal:")
+print(df["signal"].value_counts(), "\n")
+
+print("Distribución de exposición:")
+print(df["position"].describe(), "\n")
+
+print("Primeras filas:")
+print(df[["regime", "regime_future_ml", "realized_vol", "position"]].head())
