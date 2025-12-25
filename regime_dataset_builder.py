@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from arch import arch_model
 
-# 1. Cargar datos
+# Cargar datos
 
 df = pd.read_csv(
     "bitcoin_prices.csv",
@@ -14,7 +14,7 @@ df = pd.read_csv(
 returns = np.log(df["price"]).diff().dropna()
 returns_pct = returns * 100
 
-# 2. Ajustar GARCH(1,1)
+#  Ajustar GARCH(1,1)
 
 model = arch_model(
     returns_pct,
@@ -31,12 +31,12 @@ model = arch_model(
 result = model.fit(disp="off")
 
 
-# 3. Extraer variables clave
+#  Extraer variables clave
 
 sigma = result.conditional_volatility
 z = result.std_resid
 
-# 4. Construir dataset base
+#  Construir dataset base
 
 data = pd.DataFrame({
     "return_pct": returns_pct,
@@ -53,7 +53,7 @@ data["ret_5d"] = data["return_pct"].rolling(5).sum()
 data = data.dropna()
 
 
-# 5. Definir regímenes por percentiles
+#  Definir regímenes por percentiles
 
 p30 = data["volatility"].quantile(0.30)
 p70 = data["volatility"].quantile(0.70)
@@ -69,7 +69,7 @@ def classify_regime(vol):
 data["regime"] = data["volatility"].apply(classify_regime)
 
 
-# 6. Guardar dataset
+#  Guardar dataset
 
 data.to_csv("bitcoin_regime_dataset.csv")
 

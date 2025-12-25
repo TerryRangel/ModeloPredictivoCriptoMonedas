@@ -3,7 +3,7 @@ import pandas as pd
 
 btc = yf.download(
     tickers="BTC-USD",
-    start="2020-01-01",
+    start="2015-01-01",
     progress=False
 )
 

@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-# 1. Cargar dataset con régimen futuro ML
+#  Cargar dataset con régimen futuro ML
 
 df = pd.read_csv(
     "bitcoin_regime_dataset_future_ml.csv",
@@ -8,11 +8,11 @@ df = pd.read_csv(
     index_col="Date"
 ).sort_index()
 
-# 2. Retornos en escala decimal
+#  Retornos en escala decimal
 df["return"] = df["return_pct"] / 100.0
-# 3. Variación de volatilidad
+#  Variación de volatilidad
 df["vol_change"] = df["volatility"].diff()
-# 4. eñal base (direccional)
+# señal base (direccional)
 
 df["signal"] = 0
 
