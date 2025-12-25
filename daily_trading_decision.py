@@ -1,25 +1,24 @@
 import pandas as pd
 
-# =========================
-# 1. Cargar dataset con señales
-# =========================
+#  Cargar dataset con señales
+
 df = pd.read_csv(
     "bitcoin_trading_signals.csv",
     parse_dates=["Date"],
     index_col="Date"
 ).sort_index()
 
-# =========================
-# 2. Inicializar estado de posición
-# =========================
+
+#  Inicializar estado de posición
+
 # 0 = fuera del mercado
 # 1 = invertido
 position = 0
 decisions = []
 
-# =========================
-# 3. Generar decisión diaria
-# =========================
+
+#  Generar decisión diaria
+
 for date, row in df.iterrows():
     signal = row["signal"]
 
@@ -36,9 +35,9 @@ for date, row in df.iterrows():
 
     decisions.append(decision)
 
-# =========================
-# 4. Guardar decisiones
-# =========================
+
+#  Guardar decisiones
+
 df["decision"] = decisions
 
 df[[
@@ -49,9 +48,9 @@ df[[
     "ret_5d"
 ]].to_csv("bitcoin_daily_decisions.csv")
 
-# =========================
+
 # 5. Mostrar últimos días
-# =========================
+
 print("\nDECISIONES MÁS RECIENTES")
 print("-" * 40)
 print(df[[

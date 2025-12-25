@@ -19,7 +19,7 @@ df["signal"] = 0
 buy_condition = (
     (df["regime"] == 0) &                     # Régimen actual favorable
     (df["regime_future_ml"] != 2) &           # No se anticipa crisis
-    (df["vol_change"] <= 0) &                 # Volatilidad contenida
+    #(df["vol_change"] <= 0) &                 # Volatilidad contenida
     (df["ret_5d"] >= 0)                       # Momentum positivo
 )
 
@@ -33,7 +33,7 @@ df.loc[sell_condition, "signal"] = -1
 
 # Mantener posición (clásico)
 df["signal"] = df["signal"].replace(0, np.nan).ffill().fillna(0)
-# 5. VOLATILITY TARGETING (CLAVE DEL CONTROL DE DD)
+#  VOLATILITY TARGETING (CLAVE DEL CONTROL DE DD)
 # Volatilidad realizada (20 días)
 df["realized_vol"] = df["return"].rolling(20).std()
 

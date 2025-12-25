@@ -73,7 +73,7 @@ Instala dependencias:
 pip install -r requirements.txt
 
 
-(Si no tienes requirements.txt, instala manualmente las librerías listadas arriba).
+
 
 Cosas importantes antes de ejecutar
 

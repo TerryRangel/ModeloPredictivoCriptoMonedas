@@ -24,7 +24,7 @@ model = arch_model(
     vol="GARCH",
     p=1,
     q=1,
-    dist="normal"
+    dist="skewt"#si es demasiado riesgoso usar normal
 )
 
 result = model.fit(disp="off")

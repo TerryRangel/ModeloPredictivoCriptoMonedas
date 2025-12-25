@@ -1,33 +1,27 @@
 import pandas as pd
 import numpy as np
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-# =========================
-# 1. Cargar dataset base
-# =========================
+# . Cargar dataset base
+
 df = pd.read_csv(
     "bitcoin_regime_dataset.csv",
     parse_dates=["Date"],
     index_col="Date"
 ).sort_index()
 
-# =========================
-# 2. Features adicionales necesarias
-# =========================
+# 2. Features adicionales
 df["vol_change"] = df["volatility"].diff()
 
-# =========================
+
 # 3. Crear target futuro (t + 5)
-# =========================
 HORIZON = 5
 df["regime_future"] = df["regime"].shift(-HORIZON)
 
-# =========================
 # 4. Selección de variables
-# =========================
+
 features = [
     "return_pct",
     "volatility",
@@ -39,16 +33,18 @@ features = [
 
 target = "regime_future"
 
-df = df.dropna(subset=features + [target])
+df_train_valid = df.dropna(subset=features + [target]).copy()
+df = df.dropna(subset=features) 
 
-X = df[features]
-y = df[target]
+X = df_train_valid[features]
+y = df_train_valid[target]
 
-# =========================
-# 5. Split temporal
-# =========================
-train_mask = df.index < "2021-01-01"
-test_mask  = df.index >= "2021-01-01"
+
+# Split temporal (Solo para validar calidad)
+
+split_date = "2023-01-01"
+train_mask = df_train_valid.index < split_date
+test_mask  = df_train_valid.index >= split_date
 
 X_train = X.loc[train_mask]
 X_test  = X.loc[test_mask]
@@ -56,19 +52,20 @@ X_test  = X.loc[test_mask]
 y_train = y.loc[train_mask]
 y_test  = y.loc[test_mask]
 
-print("Observaciones entrenamiento:", X_train.shape[0])
-print("Observaciones test:", X_test.shape[0])
+print(f"Entrenamiento: {X_train.shape[0]} muestras")
+print(f"Validación:    {X_test.shape[0]} muestras")
 
-# =========================
-# 6. Escalado (solo train)
-# =========================
+#  Escalado
+
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled  = scaler.transform(X_test)
 
-# =========================
-# 7. Modelo ML
-# =========================
+X_all_scaled = scaler.transform(df[features])
+X_test_scaled = scaler.transform(X_test) # Solo para reporte de métricas
+
+
+#  Modelo ML
+
 model = RandomForestClassifier(
     n_estimators=400,
     max_depth=7,
@@ -79,23 +76,24 @@ model = RandomForestClassifier(
 
 model.fit(X_train_scaled, y_train)
 
-# =========================
-# 8. Evaluación
-# =========================
-y_pred = model.predict(X_test_scaled)
 
-print("\nREPORTE DE CLASIFICACIÓN (REGIMEN FUTURO)")
-print(classification_report(y_test, y_pred))
+# Evaluación (Solo sobre datos pasados conocidos)
 
-print("\nMATRIZ DE CONFUSIÓN")
-print(confusion_matrix(y_test, y_pred))
+y_pred_test = model.predict(X_test_scaled)
 
-# =========================
-# 9. Guardar dataset con régimen futuro ML
-# =========================
-df.loc[X_test.index, "regime_future_ml"] = y_pred
-df["regime_future_ml"] = df["regime_future_ml"].fillna(method="ffill")
+print("\nREPORTE DE CLASIFICACIÓN (VALIDACIÓN HISTÓRICA)")
+print(classification_report(y_test, y_pred_test))
 
+
+#  Guardar dataset con predicción 
+
+# Predecimos sobre todo 'df'
+all_predictions = model.predict(X_all_scaled)
+df["regime_future_ml"] = all_predictions
+
+# Guardamos
 df.to_csv("bitcoin_regime_dataset_future_ml.csv")
 
-print("\nDataset con régimen futuro ML guardado correctamente")
+print("\nDataset guardado. .")
+print("Últimas 5 predicciones :")
+print(df[["regime_future_ml"]].tail(5))

@@ -22,8 +22,11 @@ model = arch_model(
     vol="GARCH",
     p=1,
     q=1,
-    dist="normal"
+    dist="skewt"#si es demasiado riesgoso usar normal
 )
+#nota al usar dist="skewt" el modelo captura mejor los eventos extremos y nos ayuda 
+#a tener un mejor retorno total aumentando casi por el doble 
+#sin aumentar significativamente el drawdown máximo
 
 result = model.fit(disp="off")
 
