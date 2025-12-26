@@ -12,15 +12,15 @@ df = pd.read_csv(
     index_col="Date"
 ).sort_index()
 
-# 2. Features adicionales
+# Features adicionales
 df["vol_change"] = df["volatility"].diff()
 
 
-# 3. Crear target futuro (t + 5)
+#  Crear target futuro (t + 5)
 HORIZON = 5
 df["regime_future"] = df["regime"].shift(-HORIZON)
 
-# 4. Selección de variables
+#  Selección de variables
 
 features = [
     "return_pct",
