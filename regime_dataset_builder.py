@@ -55,8 +55,8 @@ data = data.dropna()
 
 #  Definir regímenes por percentiles
 
-p30 = data["volatility"].quantile(0.30)
-p70 = data["volatility"].quantile(0.70)
+p30 = data["volatility"].quantile(0.40)
+p70 = data["volatility"].quantile(0.80)
 
 def classify_regime(vol):
     if vol <= p30:

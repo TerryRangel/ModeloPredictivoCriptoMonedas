@@ -17,10 +17,9 @@ df["vol_change"] = df["volatility"].diff()
 df["signal"] = 0
 
 buy_condition = (
-    (df["regime"] == 0) &                     # Régimen actual favorable
-    (df["regime_future_ml"] != 2) &           # No se anticipa crisis
-    #(df["vol_change"] <= 0) &                 # Volatilidad contenida
-    (df["ret_5d"] >= 0)                       # Momentum positivo
+    (df["regime"] <= 1) &                     # Aceptamos Régimen 0 y 1 (70% de los días)
+    (df["regime_future_ml"] != 2) &           # Solo pedimos que el ML no prediga crisis
+    (df["vol_change"] <= 0.5)                     # Momentum positivo
 )
 
 sell_condition = (
