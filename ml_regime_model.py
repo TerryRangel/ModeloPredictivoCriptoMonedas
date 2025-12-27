@@ -1,11 +1,10 @@
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 
-# . Cargar dataset base
-
+# 1. Cargar dataset base
+print("Cargando datos...")
 df = pd.read_csv(
     "bitcoin_regime_dataset.csv",
     parse_dates=["Date"],
@@ -15,13 +14,11 @@ df = pd.read_csv(
 # Features adicionales
 df["vol_change"] = df["volatility"].diff()
 
-
-#  Crear target futuro (t + 5)
+# 2. Crear target futuro (t + 5)
 HORIZON = 5
 df["regime_future"] = df["regime"].shift(-HORIZON)
 
-#  Selección de variables
-
+# 3. Selección de variables
 features = [
     "return_pct",
     "volatility",
@@ -30,70 +27,85 @@ features = [
     "ret_5d",
     "vol_change"
 ]
-
 target = "regime_future"
 
-df_train_valid = df.dropna(subset=features + [target]).copy()
-df = df.dropna(subset=features) 
-
-X = df_train_valid[features]
-y = df_train_valid[target]
+# Limpiar NaNs iniciales
+df_clean = df.dropna(subset=features + [target]).copy()
 
 
-# Split temporal (Solo para validar calidad)
-
-split_date = "2023-01-01"
-train_mask = df_train_valid.index < split_date
-test_mask  = df_train_valid.index >= split_date
-
-X_train = X.loc[train_mask]
-X_test  = X.loc[test_mask]
-
-y_train = y.loc[train_mask]
-y_test  = y.loc[test_mask]
-
-print(f"Entrenamiento: {X_train.shape[0]} muestras")
-print(f"Validación:    {X_test.shape[0]} muestras")
-
-#  Escalado
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-
-X_all_scaled = scaler.transform(df[features])
-X_test_scaled = scaler.transform(X_test) # Solo para reporte de métricas
+# AQUÍ ESTÁ LA CORRECCIÓN: WALK-FORWARD VALIDATION- en el modelo anterior se usaba "train_test_split" que mezcla datos futuros con pasados de  esta manera podemos tener un modelo más realista que simula cómo se comportaría en producción
 
 
-#  Modelo ML
+# Configuración
+initial_train_years = 2  # Necesitamos al menos 2 años de historia para empezar
+start_year = df_clean.index.year.min() + initial_train_years
+final_year = df_clean.index.year.max()
 
-model = RandomForestClassifier(
-    n_estimators=400,
-    max_depth=7,
-    min_samples_leaf=40,
-    random_state=42,
-    n_jobs=-1
-)
+print(f"\nIniciando Walk-Forward Validation...")
+print(f"El modelo empezará a predecir desde el año: {start_year}")
+print("(Los años anteriores se usan solo para aprender inicialmenten y no tendrán predicción)")
 
-model.fit(X_train_scaled, y_train)
+# Contenedor para las predicciones alineadas por fecha
+all_predictions = pd.Series(index=df_clean.index, dtype=float)
+all_predictions[:] = np.nan  # Llenar de NaNs al inicio
 
+# Bucle Año por Año (Simulando la realidad)
+for year in range(start_year, final_year + 1):
+    
+    # A. DEFINIR VENTANAS TEMPORALES
+    # Entrenamiento: Desde el inicio de los tiempos hasta el año anterior (Expanding Window)
+    # Ejemplo: Si estamos prediciendo 2018, entrenamos con 2015, 2016, 2017. - asi como si en 2019 usamos 2015-2018  y asi sucesivamente
+    train_mask = df_clean.index.year < year
+    
+    # Test: El año actual que queremos operar
+    test_mask = df_clean.index.year == year
+    
+    # Validar que tengamos datos
+    if not any(train_mask) or not any(test_mask):
+        continue
 
-# Evaluación (Solo sobre datos pasados conocidos)
+    X_train = df_clean.loc[train_mask, features]
+    y_train = df_clean.loc[train_mask, target]
+    
+    X_test = df_clean.loc[test_mask, features]
+    
+    # B. ESCALADO (¡Importante!: Fit solo en train, Transform en test)
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+    
+    # C. ENTRENAR MODELO (El modelo "olvida" el futuro, solo ve el pasado)
+    model = RandomForestClassifier(
+        n_estimators=200,    # Reducido un poco para velocidad
+        max_depth=5,         # Menos profundidad para evitar overfitting rápido
+        min_samples_leaf=20, 
+        random_state=42,
+        n_jobs=-1
+    )
+    
+    model.fit(X_train_scaled, y_train)
+    
+    # D. PREDECIR EL AÑO ACTUAL
+    preds = model.predict(X_test_scaled)
+    
+    # Guardar predicciones en las fechas correspondientes
+    all_predictions.loc[test_mask] = preds
+    
+    print(f"Año {year}: Entrenado con {len(X_train)} días. Predicho para {len(X_test)} días.")
 
-y_pred_test = model.predict(X_test_scaled)
+# ==============================================================================
 
-print("\nREPORTE DE CLASIFICACIÓN (VALIDACIÓN HISTÓRICA)")
-print(classification_report(y_test, y_pred_test))
-
-
-#  Guardar dataset con predicción 
-
-# Predecimos sobre todo 'df'
-all_predictions = model.predict(X_all_scaled)
+# 4. Guardar resultados
+# Asignamos la columna. Los primeros años (2015-2016) quedarán vacíos (NaN).
+# Esto es CORRECTO: No puedes operar en 2015 si necesitas datos de 2015 para aprender.
 df["regime_future_ml"] = all_predictions
 
-# Guardamos
+# Llenamos los NaNs iniciales con un valor neutro (ej. 1) o "Peligro" (2) para no operar a ciegas
+# Sugerencia: Llenar con 2 (Alta Volatilidad) para que el bot NO opere hasta tener predicciones reales.
+df["regime_future_ml"] = df["regime_future_ml"].fillna(2)
+
 df.to_csv("bitcoin_regime_dataset_future_ml.csv")
 
-print("\nDataset guardado. .")
-print("Últimas 5 predicciones :")
-print(df[["regime_future_ml"]].tail(5))
+print("\nDataset guardado correctamente.")
+print("Nota: Los primeros años tendrán 'regime_future_ml = 2' para evitar operar sin modelo entrenado.")
+print(df[["regime_future_ml"]].tail())

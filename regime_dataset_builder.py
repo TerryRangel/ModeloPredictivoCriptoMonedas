@@ -54,19 +54,25 @@ data = data.dropna()
 
 
 #  Definir regímenes por percentiles
+min_periods = 365
 
-p30 = data["volatility"].quantile(0.30)
-p70 = data["volatility"].quantile(0.70)
+# Calcular percentiles día a día usando solo información pasada
+data['p30_dynamic'] = data['volatility'].expanding(min_periods=min_periods).quantile(0.30)
+data['p70_dynamic'] = data['volatility'].expanding(min_periods=min_periods).quantile(0.70)
 
-def classify_regime(vol):
-    if vol <= p30:
-        return 0  # Baja volatilidad
-    elif vol <= p70:
-        return 1  # Media
+def classify_regime_dynamic(row):
+    # Si no hay suficientes datos aún (primer año), asumimos regimen medio (1) por seguridad
+    if pd.isna(row['p30_dynamic']):
+        return 1 
+        
+    if row['volatility'] <= row['p30_dynamic']:
+        return 0 # Baja volatilidad (respecto al pasado conocido)
+    elif row['volatility'] <= row['p70_dynamic']:
+        return 1 # Media
     else:
-        return 2  # Alta volatilidad
+        return 2 # Alta
 
-data["regime"] = data["volatility"].apply(classify_regime)
+data['regime'] = data.apply(classify_regime_dynamic, axis=1)
 
 
 #  Guardar dataset

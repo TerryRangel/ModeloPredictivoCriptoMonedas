@@ -1,202 +1,147 @@
-Modelo Predictivo de Bitcoin con Regímenes, GARCH y Machine Learning
+#  Sistema Cuantitativo de Trading de Bitcoin (Trend + ML + Volatility Target)
 
-Este proyecto implementa un modelo cuantitativo de trading aplicado a Bitcoin, cuyo objetivo principal es reducir el riesgo (drawdown) y tomar decisiones más racionales de compra, venta o mantenerse fuera del mercado.
+Este proyecto implementa una estrategia de trading algorítmico de grado institucional para Bitcoin. A diferencia de los bots convencionales que buscan "hacerse rico rápido", este sistema está diseñado con una mentalidad **defensiva**. Su prioridad absoluta es la **gestión de riesgo** y la **protección del capital** ante los colapsos del mercado.
 
-El modelo no intenta predecir el precio exacto, sino identificar regímenes de mercado y actuar solo cuando las condiciones son favorables.
+> **Filosofía:** "Primero sobrevivir, luego ganar. En un activo tan volátil como Bitcoin, evitar las pérdidas catastróficas del -80% es matemáticamente más valioso que intentar capturar cada subida. Protegemos el capital a toda costa para permitir que el interés compuesto funcione."
 
-Objetivo del proyecto
+---
 
-Identificar regímenes de mercado (favorable, neutro, adverso)
+##  Características del Algoritmo (v3.0)
 
-Usar volatilidad (GARCH) como medida de riesgo
+El modelo ha evolucionado a una versión robusta, eliminando el sesgo de anticipación (*look-ahead bias*) e integrando múltiples capas de seguridad:
 
-Incorporar Machine Learning para anticipar regímenes futuros
+### 1. El "Escudo" de Tendencia (SMA 50)
+* **Regla:** Solo operamos si el precio está **por encima de su Media Móvil de 50 días**.
+* **Función:** Actúa como un cortafuegos. Si el mercado entra en una tendencia bajista (como en 2018 o 2022), el sistema se apaga automáticamente y se queda en Dólares.
 
-Generar señales de trading disciplinadas
+### 2. Machine Learning "Honesto" (Walk-Forward)
+* **Modelo:** Random Forest Classifier.
+* **Función:** No intenta adivinar el precio. Su único trabajo es predecir **peligro**. Si la IA detecta alta probabilidad de un crash inminente, veta las señales de compra.
 
-Reducir drawdown frente a una estrategia pasiva (buy & hold)
+### 3. Volatility Targeting (Gestión de Posición)
+* El sistema nunca apuesta "todo o nada". Ajusta el tamaño de la inversión diariamente:
+    * **Mercado Seguro:** Aumenta la exposición (hasta 100%).
+    * **Mercado Incierto:** Reduce la exposición (al 30%, 10% o 0%).
 
-Resultados principales (2020–2025)
-Retorno total estrategia: 66.87%
-Retorno total mercado:    241.19%
+---
 
-Drawdown máximo estrategia: -34.81%
-Drawdown máximo mercado:    -83.72%
+## 📊 Resultados Anuales (Backtest 2015-2025)
 
-Días invertido: 934 de 2171
+*Validación realizada sin Data Leakage (Walk-Forward).*
 
+| AÑO | ESTRATEGIA | MERCADO (BTC) | DIFERENCIA | DD ESTRATEGIA | DD MERCADO |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **2015** | 0.00% | 22.63% | -22.63% | 0.00% | -42.63% |
+| **2016** | 0.00% | 98.80% | -98.80% | 0.00% | -31.03% |
+| **2017** | 92.28% | 838.03% | -745.75% | -15.74% | -37.94% |
+| **2018** | **-9.14%** | **-81.29%** | **+72.15%** | **-15.47%** | **-86.54%** |
+| **2019** | 81.44% | 53.20% | +28.23% | -18.10% | -55.12% |
+| **2020** | 167.95% | 185.60% | -17.65% | -21.41% | -59.66% |
+| **2021** | 37.71% | 15.55% | +22.17% | -13.54% | -58.22% |
+| **2022** | **-22.37%** | **-71.09%** | **+48.72%** | **-23.39%** | **-73.07%** |
+| **2023** | 77.93% | 132.67% | -54.74% | -12.51% | -20.80% |
+| **2024** | 43.91% | 92.02% | -48.12% | -25.09% | -31.53% |
+| **2025** | 5.02% | -14.27% | +19.28% | -9.96% | -33.12% |
 
-La estrategia sacrifica retorno total a cambio de una reducción significativa del riesgo, lo cual es el objetivo principal.
+###  Resumen Final
+| Métrica | Estrategia (Trend + ML) | Mercado (Buy & Hold) |
+| :--- | :--- | :--- |
+| **Retorno Total** | **2,341.61%** | 2,295.37% |
+| **Riesgo Máximo (Drawdown)** | **-30.03%** | **-88.64%** |
+| **Días en Mercado** | 1,374 días | 4,008 días |
 
-Requisitos
+> **Conclusión:** La estrategia logró superar al mercado a largo plazo, pero lo más importante es que **redujo el riesgo casi 3 veces**. Mientras el inversor promedio perdía el 88% de su dinero en los peores momentos, la estrategia solo bajó un 30%.
 
-Antes de ejecutar el proyecto necesitas:
+---
 
-Python 3.9 o superior
+##  Ejemplo de Uso e Interpretación
 
-Git
+Para utilizar el sistema en tu día a día, utiliza el script `custom_simulator_split.py`. Este funciona como un **Asistente de Inversión** que te dice exactamente qué hacer con tu dinero.
 
-Conexión a internet (para descargar datos si se desea actualizar)
-
-Librerías utilizadas
-
-pandas
-
-numpy
-
-matplotlib
-
-statsmodels
-
-arch
-
-scikit-learn
-
-yfinance (opcional, para descarga de datos)
-
-Instalación
-
-Clona el repositorio:
-
-git clone <URL_DEL_REPOSITORIO>
-cd ModeloPredictivoCriptoMonedas
-
-
-Crea y activa el entorno virtual:
-
-python -m venv venv
-venv\Scripts\activate   # Windows
-
-
-Instala dependencias:
-
-pip install -r requirements.txt
+### 1. Ejecutar el Simulador
+```bash
+python simulator.py
 
 
 
+Cómo leer la salida (Ejemplo Real)
+Imagina que tienes un capital total de $10,000 USD. El simulador te mostrará algo así:
 
-Cosas importantes antes de ejecutar
+Plaintext
 
-Los scripts dependen de archivos CSV generados por pasos anteriores.
+FECHA      | PRECIO   | RIESGO | TOTAL (USD) | EN BITCOIN ($) | EN DÓLARES ($) | ORDEN DE TRADING
+2025-06-15 | $98,000  | 60%    | $10,000     | $6,000         | $4,000         | 🟢 COMPRA: $1,000 (0.01 BTC)
+Explicación paso a paso:
 
-No ejecutes todo al azar: el proyecto sigue un flujo lógico.
+RIESGO (60%): El modelo ha calculado que hoy es seguro tener el 60% de tu dinero invertido.
 
-Las fechas y periodos pueden cambiar los resultados.
+EN BITCOIN ($6,000): Te dice que tu posición ideal en Bitcoin debería valer $6,000 dólares hoy.
 
-El modelo no incluye costos de transacción.
+EN DÓLARES ($4,000): Te dice que debes guardar $4,000 dólares en efectivo (USDT) como reserva de seguridad.
 
-Estructura del proyecto y explicación de archivos
+ORDEN DE TRADING: Como ayer tenías menos (digamos $5,000 en BTC), hoy el sistema te ordena: "Saca $1,000 de tu reserva y COMPRA Bitcoin" para llegar al nivel óptimo.
+
+
+
+## 📂 Estructura del Proyecto
+
+El flujo de trabajo es secuencial y modular:
+
+```text
+
 MODELOPREDICTIVOCRIPTOMONEDAS/
 │
-├── AnalisisdelModelo/
-│   └── Reportes, gráficas y análisis manuales
+├── AnalisisdelModelo/              # Reportes, gráficas y diagnósticos
+│   ├── garch_diagnostics.py        # Validación del modelo de volatilidad
+│   ├── volatility_diagnostics.py   # Análisis de residuos
+│   └── reporte_anual.csv           # Archivo de métricas generadas
 │
-├── venv/
-│   └── Entorno virtual
 │
-├── bitcoin_prices.csv
-│   └── Precios históricos de Bitcoin (datos base)
+├── 1. DATOS Y PREPARACIÓN
+│   ├── data_loader.py              # Descarga precios históricos actualizados
+│   ├── regime_dataset_builder.py   # Calcula volatilidad GARCH y define regímenes
+│   └── bitcoin_prices.csv          # Base de datos de precios
 │
-├── data_loader.py
-│   └── Descarga o carga de datos históricos
+├── 2. INTELIGENCIA ARTIFICIAL
+│   ├── ml_regime_model.py          # Entrena el modelo (Walk-Forward)
+│   ├── bitcoin_regime_dataset.csv  # Dataset de entrenamiento
+│   └── bitcoin_regime_dataset_future_ml.csv # Predicciones generadas
 │
-├── garch_model.py
-│   └── Modelo GARCH para estimar volatilidad
+├── 3. LÓGICA DE TRADING
+│   ├── trading_rules.py            # EL CEREBRO: SMA50 + Vol Target + IA rules
+│   └── bitcoin_trading_signals.csv # Señales finales (Buy/Sell) y tamaño de posición
 │
-├── garch_diagnostics.py
-│   └── Validación del modelo GARCH (ARCH-LM, residuos)
+├── 4. EJECUCIÓN Y SIMULACIÓN
+│   ├── backtesting_engine.py       # Backtest rápido matemático
+│   ├── simulator.py   # SIMULADOR VISUAL (Bitcoin vs Dólares)
+│   ├── daily_trading_decision.py   # Consultar decisión de HOY
+│   └── run.py                      # Pipeline automático
 │
-├── regime_dataset_builder.py
-│   └── Construye el dataset de características (features)
-│
-├── bitcoin_regime_dataset.csv
-│   └── Dataset con retornos, volatilidad y régimen actual
-│
-├── ml_regime_model.py
-│   └── Modelo de Machine Learning que predice régimen futuro
-│
-├── bitcoin_regime_dataset_ml.csv
-│   └── Dataset preparado para entrenamiento ML
-│
-├── bitcoin_regime_dataset_future_ml.csv
-│   └── Dataset con predicción de régimen a t+5
-│
-├── trading_rules.py
-│   └── Reglas de trading (compra / salida / exposición)
-│
-├── bitcoin_trading_signals.csv
-│   └── Señales finales generadas por el modelo
-│
-├── backtesting_engine.py
-│   └── Simulación histórica de la estrategia
-│
-├── daily_trading_decision.py
-│   └── Script para obtener la decisión del día actual
-│
-└── README.md
-
-Flujo recomendado de ejecución
-
-Ejecuta los scripts en este orden:
-
-Cargar o actualizar datos:
-
-python data_loader.py
+└── README.md                       # Documentación
 
 
-Calcular volatilidad:
+Clonar el repositorio:
 
-python garch_model.py
-python garch_diagnostics.py
+Bash
 
+git clone <URL_DE_LA_REPO>
+cd ModeloPredictivoCriptoMonedas
+Instalar librerías:
 
-Construir dataset de regímenes:
+Bash
 
-python regime_dataset_builder.py
+pip install -r requirements.txt
+Ejecutar el modelo:
 
+Bash
 
-Entrenar modelo ML:
+python run.py
+⚠️ Disclaimer
+Este software es una herramienta de investigación cuantitativa. El trading de criptomonedas conlleva un alto riesgo de pérdida.
 
-python ml_regime_model.py
+El rendimiento pasado (2341%) no garantiza resultados futuros.
 
+El modelo está diseñado para proteger, pero ninguna estrategia es infalible.
 
-Generar señales de trading:
+Úsalo bajo tu propia responsabilidad y nunca inviertas dinero que no puedas permitirte perder.
 
-python trading_rules.py
-
-
-Evaluar resultados:
-
-python backtesting_engine.py
-
-Tipo de modelo
-
-Modelo cuantitativo basado en reglas
-
-Machine Learning como filtro de riesgo, no como oráculo
-
-Perfil conservador–balanceado
-
-Enfocado en supervivencia del capital
-
-Limitaciones
-
-No considera comisiones ni slippage
-
-Resultados dependen del periodo analizado
-
-No garantiza resultados futuros
-
-Bitcoin es un activo altamente volátil
-
-Trabajo futuro
-
-Ajuste automático de exposición
-
-Métricas Sharpe / Sortino
-
-Walk-forward analysis
-
-Datos intradía
-
-Aplicación a otros activos
