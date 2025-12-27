@@ -7,7 +7,8 @@ scripts = [
     "regime_dataset_builder.py",   # 2. Calcula indicadores y regímenes 
     "ml_regime_model.py",          # 3. Entrena el modelo con los nuevos datos
     "trading_rules.py",            # 4. Genera las señales de compra/venta
-    "backtesting_engine.py"        # 5. Muestra los resultados finales
+    "backtesting_engine.py",
+    "daily_trading_decision.py"                # 5. Muestra los resultados finales
     ""
 ]
 
