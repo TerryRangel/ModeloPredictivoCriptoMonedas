@@ -3,7 +3,7 @@ import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceDot } from 'recharts';
 import { RefreshCw, DatabaseZap } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'https://modelopredictivocriptomonedas.onrender.com/api';
 
 export default function Dashboard() {
   const [current, setCurrent] = useState(null);

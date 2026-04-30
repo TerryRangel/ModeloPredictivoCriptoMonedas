@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Database } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'https://modelopredictivocriptomonedas.onrender.com/api';
 
 export default function DecisionsHistory() {
   const [decisions, setDecisions] = useState([]);

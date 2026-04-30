@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Play, Info, ShieldAlert } from 'lucide-react';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = 'https://modelopredictivocriptomonedas.onrender.com/api';
 
 export default function Simulator() {
   const [startDate, setStartDate] = useState('2022-01-01');
