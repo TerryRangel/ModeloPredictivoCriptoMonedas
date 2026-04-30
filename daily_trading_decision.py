@@ -49,6 +49,14 @@ df[[
 ]].to_csv("bitcoin_daily_decisions.csv")
 
 
+
+
+
+
+
+
+
+
 # 5. Mostrar últimos días
 
 print("\nDECISIONES MÁS RECIENTES")
@@ -60,3 +68,5 @@ print(df[[
     "vol_trend_5",
     "ret_5d"
 ]].tail(10))
+
+

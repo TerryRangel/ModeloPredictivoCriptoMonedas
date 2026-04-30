@@ -11,7 +11,7 @@ if "price" not in df.columns:
     df = df.join(df_prices["price"], how="left")
 
 # 2. CALCULAR INDICADORES DE TENDENCIA (LA CLAVE DEL ÉXITO)
-# SMA 50: Filtro de tendencia de mediano plazo
+# SMA 50: Filtro de tendencia de mediano plazo-esto nos ayuda a evitar mercados bajistas prolongados
 df["sma_50"] = df["price"].rolling(window=50).mean()
 # Distancia al SMA (Positiva = Tendencia Alcista, Negativa = Bajista)
 df["trend_dist"] = (df["price"] - df["sma_50"]) / df["sma_50"]
@@ -23,10 +23,9 @@ df["vol_change"] = df["volatility"].diff()
 df["trend_strength"] = df["return"].rolling(20).mean() # Momentum corto
 
 
-# ==============================================================================
-# LÓGICA DE SEÑALES (FILTRO DE TENDENCIA + ML)
-# ==============================================================================
 
+# LÓGICA DE SEÑALES (FILTRO DE TENDENCIA + ML)
+#esto ayuda a evitar falsas señales en mercados bajistas prolongados como 2018 y 2022
 df["signal"] = 0 # 0 = Neutro, 1 = Comprar, -1 = Vender
 
 # --- CONDICIÓN DE COMPRA ROBUSTA ---
@@ -68,15 +67,14 @@ df.loc[emergency_exit, "signal"] = -1
 df["signal"] = df["signal"].replace(0, np.nan).ffill().fillna(0)
 
 
-# ==============================================================================
-# GESTIÓN DE RIESGO (VOLATILITY TARGETING)
-# ==============================================================================
 
-df["realized_vol"] = df["return"].rolling(24).std()
-df["realized_vol"] = df["realized_vol"].clip(lower=0.006)
+# GESTIÓN DE RIESGO (VOLATILITY TARGETING
+
+df["realized_vol"] = df["return"].rolling(24).std()#el numero  24 significa  que se calcula la volatilidad de los ultimos 24 dias para tener una mejor idea de la volatilidad actual del mercado
+df["realized_vol"] = df["realized_vol"].clip(lower=0.006) #el 0.006 significa que la volatilidad minima que se puede tener es del 0.6% para evitar posiciones extremadamente altas en mercados muy tranquilos
 
 # Target Base
-df["dynamic_target"] = 0.010
+df["dynamic_target"] = 0.010# significa que el target base es del 1% diario de volatilidad
 
 # Si la tendencia es MUY fuerte (Precio > 10% sobre SMA 50), aumentamos apuesta
 # Esto nos permite ganar más en los "Bull Runs" como 2020-2021
